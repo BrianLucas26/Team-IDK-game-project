@@ -3,6 +3,7 @@ use bevy::{prelude::*
 };
 use std::time::Duration;
 
+use crate::{BossTrigger};
 use crate::GameState;
 
 pub struct VictoryPlugin;
@@ -20,7 +21,7 @@ impl Plugin for VictoryPlugin {
         app
         .add_startup_system(setup_victory)
         .add_system_set(SystemSet::on_update(GameState::Victory)
-				.with_system(check_timer)
+			.with_system(check_timer)
 		)
         .add_system_set(SystemSet::on_enter(GameState::Victory)
             .with_system(render)
@@ -64,12 +65,16 @@ fn check_timer(
 	time: Res<Time>,
 	mut victory_list: Query<&mut VictoryTimer, With<Victory>>,
     mut game_state: ResMut<State<GameState>>,
+    mut boss_flag: Query<&mut BossTrigger>,
 ) {
+    let boss_fight = boss_flag.single_mut();
 	for mut timer in victory_list.iter_mut(){
 		timer.tick(time.delta());
-		if timer.just_finished(){
+		if timer.just_finished() && boss_fight.boss_trigger {
+            game_state.set(GameState::Credits).unwrap();
+		} else if timer.just_finished() && !boss_fight.boss_trigger {
             game_state.set(GameState::Overworld).unwrap();
-		}
+        }
 	}
 
 }
